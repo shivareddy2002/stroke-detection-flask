@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Prediction Result - BrainStroke</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <section class="about">
+    {% if error %}
+      <h2>{{ error }}</h2>
+    {% else %}
+      <h2>Prediction Result</h2>
+      <img src="{{ preview_image }}" alt="Preview Image" style="width:300px;border-radius:10px;margin-top:20px;">
+      <p><strong>Class:</strong> {{ pred_class }}</p>
+      <p><strong>Confidence:</strong> {{ confidence }}%</p>
+      <p><strong>Time Taken:</strong> {{ time_taken }}s</p>
+      <p><strong>Selected Features:</strong> {{ features }}</p>
+    {% endif %}
+    <br>
+    <a href="{{ url_for('home') }}" class="contact-btn">← Back to Home</a>
+  </section>
+</body>
+</html>
+        </form>
+        </section>
+    
+        <!-- ABOUT SECTION -->
+        <section id="about" class="about">
+        <h2>🧠 About BrainStroke</h2>
+        <p>BrainStroke is an AI-powered web application designed to assist healthcare professionals in the rapid and accurate detection of strokes using CT and MRI scans. Leveraging advanced machine learning techniques, including the GA-BiGRU model, BrainStroke analyzes medical images to provide reliable predictions, helping to improve patient outcomes through timely diagnosis.</p>
+        </section>
+    
+        <!-- HOW IT WORKS SECTION -->
+        <section id="how-it-works" class="how-it-works">
+        <h2>⚙️ How It Works</h2>
+        <div class="steps">
+            <div class="step">
+            <h3>1. Upload Scan</h3>
+            <p>Select and upload your CT or MRI brain scan image using our secure upload form.</p>
+            </div>
+            <div class="step">
+            <h3>2. AI Analysis</h3>
+            <p>Our GA-BiGRU model processes the image, extracting key features and analyzing them for stroke indicators.</p>
+            </div>
+            <div class="step">
+            <h3>3. Get Results</h3>
+            <p>Receive a detailed prediction report including stroke classification, confidence level, and processing time.</p>
+            </div>
+        </div>
+        </section>       

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BrainStroke - AI Stroke Detection</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+  <!-- Navbar -->
+  <header>
+    <nav>
+      <div class="logo">
+        <img src="{{ url_for('static', filename='images/brain-icon.jpg') }}" alt="BrainStroke Logo">
+        <span>BrainStroke</span>
+      </div>
+      <ul>
+        <li><a href="#home">Home</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- Hero Section -->
+  <section id="home" class="hero">
+    <div class="hero-content">
+      <h1>🧠 <span>BrainStroke</span></h1>
+      <h2>AI-Powered Stroke Detection in Seconds</h2>
+      <p>Revolutionizing Stroke Diagnosis with Artificial Intelligence</p>
+      <p>Upload CT or MRI scans and let our GA-BiGRU model assist healthcare professionals with fast, accurate, and reliable stroke detection.</p>
+
+      <div class="buttons" id="upload">
+        <form action="{{ url_for('predict') }}" method="POST" enctype="multipart/form-data">
+          <input type="file" name="file" required>
+          <button type="submit" class="upload-btn">Upload Scan</button>
+        </form>
+        <a href="{{ url_for('demo') }}" class="demo-btn">View Demo</a>
+      </div>
+    </div>
+
+    <div class="hero-image">
+      <img src="{{ url_for('static', filename='images/download.jpg') }}" alt="Brain Illustration">
+    </div>
+  </section>
+
+  <!-- About Section -->
+  <section id="about" class="about">
+    <h2>About BrainStroke</h2>
+    <p>
+      BrainStroke is an AI-powered medical platform designed to assist doctors in stroke detection using CT and MRI scans.
+      Our system leverages advanced GA-BiGRU deep learning models to analyze medical images, providing real-time insights with high accuracy.
+    </p>
+  </section>
+
+  <!-- How It Works Section -->
+  <section id="how-it-works" class="how-it-works">
+    <h2>How It Works</h2>
+    <div class="steps">
+      <div class="step">
+        <h3>1️⃣ Upload Scan</h3>
+        <p>Upload a CT or MRI scan through the upload form.</p>
+      </div>
+      <div class="step">
+        <h3>2️⃣ AI Analysis</h3>
+        <p>The GA-BiGRU model processes the image and detects stroke symptoms.</p>
+      </div>
+      <div class="step">
+        <h3>3️⃣ Instant Results</h3>
+        <p>Receive detection results in seconds, including confidence and scan analysis.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact Section -->
+  <section id="contact" class="contact">
+    <h2>Contact Us</h2>
+    <p>Have questions or feedback? We’d love to hear from you.</p>
+    <a href="mailto:brainstroke.ai@gmail.com" class="contact-btn">Send Email</a>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p>© 2025 BrainStroke | All Rights Reserved</p>
+  </footer>
+</body>
+</html>
