@@ -15,20 +15,18 @@ except Exception:
 app = Flask(__name__)
 
 # -----------------------
-# Directories setup
+# Directory setup
 # -----------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
-STATIC_IMAGES_DIR = os.path.join(STATIC_DIR, "images")
 UPLOADS_DIR = os.path.join(STATIC_DIR, "uploads")
-CSS_DIR = os.path.join(STATIC_DIR, "css")
+IMAGES_DIR = os.path.join(STATIC_DIR, "images")
 
-os.makedirs(STATIC_IMAGES_DIR, exist_ok=True)
 os.makedirs(UPLOADS_DIR, exist_ok=True)
-os.makedirs(CSS_DIR, exist_ok=True)
+os.makedirs(IMAGES_DIR, exist_ok=True)
 
-MODEL_PATH = "GA_BiGRU_Improved.h5"
-CHROMOSOME_PATH = "GA_BiGRU_best_chromosome.npy"
+MODEL_PATH = os.path.join(BASE_DIR, "GA_BiGRU_Improved.h5")
+CHROMOSOME_PATH = os.path.join(BASE_DIR, "GA_BiGRU_best_chromosome.npy")
 
 model = None
 selected_features = None
@@ -39,10 +37,9 @@ try:
     if os.path.exists(CHROMOSOME_PATH):
         best_chromosome = np.load(CHROMOSOME_PATH)
         selected_features = np.flatnonzero(best_chromosome)
-    print("Model & features initialized.")
+    print("✅ Model & features initialized.")
 except Exception as e:
-    model, selected_features = None, None
-    print(f"Model loading failed: {e}")
+    print(f"⚠️ Model loading failed: {e}")
 
 # -----------------------
 # Helper Functions
@@ -76,8 +73,11 @@ def generate_demo_scan(output_path, size=(512, 512), seed=None):
         outline = max(0, min(255, int(100 - i * 8 + np.random.randint(-5, 5))))
         draw.ellipse(bbox, outline=outline, width=2)
     lesion_r = int(min(w, h) * 0.08)
-    lesion_c = (int(cx + np.random.randint(-40, 40)), int(cy + np.random.randint(-40, 40)))
-    draw.ellipse([lesion_c[0]-lesion_r, lesion_c[1]-lesion_r, lesion_c[0]+lesion_r, lesion_c[1]+lesion_r], fill=220)
+    lesion_cx, lesion_cy = int(cx + np.random.randint(-40, 40)), int(cy + np.random.randint(-40, 40))
+    draw.ellipse(
+        [lesion_cx - lesion_r, lesion_cy - lesion_r, lesion_cx + lesion_r, lesion_cy + lesion_r],
+        fill=220
+    )
     arr = np.array(base, dtype=np.int16)
     noise = np.random.normal(0, 10, (h, w)).astype(np.int16)
     arr = np.clip(arr + noise, 0, 255).astype("uint8")
@@ -126,7 +126,7 @@ def predict():
 
 @app.route("/demo")
 def demo():
-    demo_file = os.path.join(STATIC_IMAGES_DIR, "demo_scan.png")
+    demo_file = os.path.join(IMAGES_DIR, "demo_scan.png")
     try:
         generate_demo_scan(demo_file, seed=42)
     except Exception as e:
@@ -140,5 +140,6 @@ def demo():
                            preview_image=preview_url,
                            demo=True)
 
+# For Vercel (expose 'app' only)
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000)

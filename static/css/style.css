@@ -237,4 +237,6 @@ input[type="file"] {
 footer {
   background: #2636c3;
   color: white;
-  t
+  text-align: center;
+  padding: 1rem 0;  
+}
