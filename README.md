@@ -1,4 +1,6 @@
-# 🧠 Advanced Stroke Prediction Web App (Flask)
+<p align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:6a11cb,100:2575fc&height=180&section=header&text=Advanced%20Stroke%20Prediction%20Web%20App%20(Flask)&fontSize=34&fontColor=ffffff&animation=fadeIn&fontAlignY=35"/>
+</p>
 
 An interactive **Machine Learning & Deep Learning web application** built with **Flask** for **stroke risk prediction** from **CT and MRI medical image data**.  
 This project integrates **computer vision**, **AI models**, and **data analytics** into a seamless web-based platform for medical insights and stroke type classification.
@@ -68,3 +70,21 @@ The dataset contains **CT and MRI images** categorized by **stroke type**, allow
 | Environment       | Python 3.8+                 |
 
 ---
+## 👨‍💻 Author  
+
+**Lomada Siva Gangi Reddy**  
+- 🎓 B.Tech CSE (Data Science), RGMCET (2021–2025)  
+- 💡 Interests: Python | Machine Learning | Deep Learning | Data Science  
+- 📍 Open to **Internships & Job Offers**
+
+ **Contact Me**:  
+
+- 📧 **Email**: lomadasivagangireddy3@gmail.com  
+- 📞 **Phone**: 9346493592  
+- 💼 [LinkedIn](https://www.linkedin.com/in/lomada-siva-gangi-reddy-a64197280/)  🌐 [GitHub](https://github.com/shivareddy2002)  🚀 [Portfolio](https://lsgr-portfolio-pulse.lovable.app/)
+
+---
+
+<p align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:f9c74f,100:ff4b4b&height=120&section=footer"/>
+</p>
