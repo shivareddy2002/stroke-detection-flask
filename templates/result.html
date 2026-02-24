@@ -15,7 +15,11 @@
       <p><strong>Class:</strong> {{ pred_class }}</p>
       <p><strong>Confidence:</strong> {{ confidence }}%</p>
       <p><strong>Time Taken:</strong> {{ time_taken }}s</p>
+      <p><strong>Inference Engine:</strong> {{ engine }}</p>
       <p><strong>Selected Features:</strong> {{ features }}</p>
+      {% if insights %}
+      <p><strong>Image Insights:</strong> mean={{ insights.mean_intensity }}, contrast={{ insights.center_contrast }}, edges={{ insights.edge_strength }}</p>
+      {% endif %}
     {% endif %}
     <br>
     <a href="{{ url_for('home') }}" class="contact-btn">← Back to Home</a>
