@@ -81,6 +81,7 @@ use this lightweight serverless setup:
 
 - Keep `requirements.txt` minimal (`flask`, `numpy`, `pillow`, `werkzeug`)
 - Remove heavyweight training/runtime-only libraries from production builds
+- Use `/tmp` (ephemeral writable directory) for uploads/generated files in serverless runtime
 - The app automatically uses:
   - **GA-BiGRU model** when TensorFlow + model files are available
   - **Heuristic fallback inference** when they are not available in serverless

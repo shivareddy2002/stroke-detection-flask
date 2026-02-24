@@ -1,9 +1,10 @@
-from flask import Flask, render_template, request, url_for
+from flask import Flask, render_template, request, url_for, send_from_directory
 import math
 import numpy as np
 import time
 import os
 import uuid
+import tempfile
 from werkzeug.utils import secure_filename
 from PIL import Image, ImageDraw, ImageFilter
 
@@ -20,8 +21,9 @@ app = Flask(__name__)
 # -----------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
-UPLOADS_DIR = os.path.join(STATIC_DIR, "uploads")
-IMAGES_DIR = os.path.join(STATIC_DIR, "images")
+RUNTIME_DIR = os.path.join(tempfile.gettempdir(), "brainstroke_runtime")
+UPLOADS_DIR = os.path.join(RUNTIME_DIR, "uploads")
+IMAGES_DIR = os.path.join(RUNTIME_DIR, "images")
 
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 os.makedirs(IMAGES_DIR, exist_ok=True)
@@ -154,7 +156,7 @@ def predict():
 
         label = "Stroke" if prob > 0.5 else "Normal"
         conf = float(prob * 100 if prob > 0.5 else (1 - prob) * 100)
-        preview_url = url_for("static", filename=f"uploads/{unique_name}")
+        preview_url = url_for("runtime_file", folder="uploads", filename=unique_name)
 
         return render_template("result.html",
                                pred_class=label,
@@ -168,6 +170,15 @@ def predict():
     except Exception as e:
         return render_template("result.html", error=f"❌ Prediction failed: {e}")
 
+
+
+@app.route("/runtime/<folder>/<path:filename>")
+def runtime_file(folder, filename):
+    if folder not in {"uploads", "images"}:
+        return "Invalid folder", 404
+    target_dir = os.path.join(RUNTIME_DIR, folder)
+    return send_from_directory(target_dir, filename)
+
 @app.route("/demo")
 def demo():
     demo_file = os.path.join(IMAGES_DIR, "demo_scan.png")
@@ -175,7 +186,7 @@ def demo():
         generate_demo_scan(demo_file, seed=42)
     except Exception as e:
         print("Demo generation error:", e)
-    preview_url = url_for("static", filename="images/demo_scan.png")
+    preview_url = url_for("runtime_file", folder="images", filename="demo_scan.png")
     return render_template("result.html",
                            pred_class="Stroke",
                            confidence=91.3,
