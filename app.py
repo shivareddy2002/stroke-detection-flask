@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, url_for
+import math
 import numpy as np
 import time
 import os
@@ -53,6 +54,40 @@ def preprocess_image(img_path, image_size=(128, 128), selected_features=None):
         flat_img = flat_img[valid_idx] if valid_idx else flat_img
     return flat_img.reshape(1, 1, -1)
 
+
+def heuristic_predict(img_path, image_size=(128, 128)):
+    """Lightweight fallback predictor for serverless deployments without TensorFlow."""
+    img = Image.open(img_path).convert("L").resize(image_size)
+    arr = np.array(img, dtype=np.float32) / 255.0
+
+    mean_intensity = float(arr.mean())
+    std_intensity = float(arr.std())
+
+    gx = np.abs(np.diff(arr, axis=1)).mean()
+    gy = np.abs(np.diff(arr, axis=0)).mean()
+    edge_strength = float((gx + gy) / 2)
+
+    center = arr[36:92, 36:92]
+    border_mask = np.ones_like(arr, dtype=bool)
+    border_mask[24:104, 24:104] = False
+    border = arr[border_mask]
+    center_contrast = float(center.mean() - border.mean())
+
+    # Weighted feature score, then mapped to [0,1] with sigmoid.
+    score = (
+        2.4 * (mean_intensity - 0.42)
+        + 2.0 * (std_intensity - 0.19)
+        + 3.2 * (edge_strength - 0.13)
+        + 1.8 * center_contrast
+    )
+    prob = 1 / (1 + math.exp(-score))
+    return float(np.clip(prob, 0.01, 0.99)), {
+        "mean_intensity": round(mean_intensity, 4),
+        "std_intensity": round(std_intensity, 4),
+        "edge_strength": round(edge_strength, 4),
+        "center_contrast": round(center_contrast, 4),
+    }
+
 def generate_demo_scan(output_path, size=(512, 512), seed=None):
     if seed is not None:
         np.random.seed(seed)
@@ -92,9 +127,6 @@ def home():
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    if model is None or selected_features is None:
-        return render_template("result.html", error="⚠️ Model files not found. Place GA_BiGRU_Improved.h5 and GA_BiGRU_best_chromosome.npy in the project root.")
-
     file = request.files.get("file")
     if not file or file.filename == "":
         return render_template("result.html", error="❌ No file selected.")
@@ -106,8 +138,18 @@ def predict():
         file.save(save_path)
 
         start = time.time()
-        img = preprocess_image(save_path, selected_features=selected_features)
-        prob = model.predict(img, verbose=0)[0][0]
+        engine = "Heuristic"
+        feature_count = 4
+        insights = None
+
+        if model is not None and selected_features is not None:
+            img = preprocess_image(save_path, selected_features=selected_features)
+            prob = model.predict(img, verbose=0)[0][0]
+            engine = "GA-BiGRU"
+            feature_count = len(selected_features)
+        else:
+            prob, insights = heuristic_predict(save_path)
+
         duration = round(time.time() - start, 2)
 
         label = "Stroke" if prob > 0.5 else "Normal"
@@ -118,7 +160,9 @@ def predict():
                                pred_class=label,
                                confidence=round(conf, 1),
                                time_taken=duration,
-                               features=len(selected_features),
+                               features=feature_count,
+                               engine=engine,
+                               insights=insights,
                                preview_image=preview_url,
                                demo=False)
     except Exception as e:
@@ -142,5 +186,4 @@ def demo():
 
 # For Vercel (expose 'app' only)
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
