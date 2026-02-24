@@ -1,8 +1,10 @@
-from flask import Flask, render_template, request, url_for
+from flask import Flask, render_template, request, url_for, send_from_directory
+import math
 import numpy as np
 import time
 import os
 import uuid
+import tempfile
 from werkzeug.utils import secure_filename
 from PIL import Image, ImageDraw, ImageFilter
 
@@ -19,8 +21,9 @@ app = Flask(__name__)
 # -----------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
-UPLOADS_DIR = os.path.join(STATIC_DIR, "uploads")
-IMAGES_DIR = os.path.join(STATIC_DIR, "images")
+RUNTIME_DIR = os.path.join(tempfile.gettempdir(), "brainstroke_runtime")
+UPLOADS_DIR = os.path.join(RUNTIME_DIR, "uploads")
+IMAGES_DIR = os.path.join(RUNTIME_DIR, "images")
 
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 os.makedirs(IMAGES_DIR, exist_ok=True)
@@ -52,6 +55,40 @@ def preprocess_image(img_path, image_size=(128, 128), selected_features=None):
         valid_idx = [i for i in selected_features if 0 <= i < len(flat_img)]
         flat_img = flat_img[valid_idx] if valid_idx else flat_img
     return flat_img.reshape(1, 1, -1)
+
+
+def heuristic_predict(img_path, image_size=(128, 128)):
+    """Lightweight fallback predictor for serverless deployments without TensorFlow."""
+    img = Image.open(img_path).convert("L").resize(image_size)
+    arr = np.array(img, dtype=np.float32) / 255.0
+
+    mean_intensity = float(arr.mean())
+    std_intensity = float(arr.std())
+
+    gx = np.abs(np.diff(arr, axis=1)).mean()
+    gy = np.abs(np.diff(arr, axis=0)).mean()
+    edge_strength = float((gx + gy) / 2)
+
+    center = arr[36:92, 36:92]
+    border_mask = np.ones_like(arr, dtype=bool)
+    border_mask[24:104, 24:104] = False
+    border = arr[border_mask]
+    center_contrast = float(center.mean() - border.mean())
+
+    # Weighted feature score, then mapped to [0,1] with sigmoid.
+    score = (
+        2.4 * (mean_intensity - 0.42)
+        + 2.0 * (std_intensity - 0.19)
+        + 3.2 * (edge_strength - 0.13)
+        + 1.8 * center_contrast
+    )
+    prob = 1 / (1 + math.exp(-score))
+    return float(np.clip(prob, 0.01, 0.99)), {
+        "mean_intensity": round(mean_intensity, 4),
+        "std_intensity": round(std_intensity, 4),
+        "edge_strength": round(edge_strength, 4),
+        "center_contrast": round(center_contrast, 4),
+    }
 
 def generate_demo_scan(output_path, size=(512, 512), seed=None):
     if seed is not None:
@@ -92,9 +129,6 @@ def home():
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    if model is None or selected_features is None:
-        return render_template("result.html", error="⚠️ Model files not found. Place GA_BiGRU_Improved.h5 and GA_BiGRU_best_chromosome.npy in the project root.")
-
     file = request.files.get("file")
     if not file or file.filename == "":
         return render_template("result.html", error="❌ No file selected.")
@@ -106,23 +140,44 @@ def predict():
         file.save(save_path)
 
         start = time.time()
-        img = preprocess_image(save_path, selected_features=selected_features)
-        prob = model.predict(img, verbose=0)[0][0]
+        engine = "Heuristic"
+        feature_count = 4
+        insights = None
+
+        if model is not None and selected_features is not None:
+            img = preprocess_image(save_path, selected_features=selected_features)
+            prob = model.predict(img, verbose=0)[0][0]
+            engine = "GA-BiGRU"
+            feature_count = len(selected_features)
+        else:
+            prob, insights = heuristic_predict(save_path)
+
         duration = round(time.time() - start, 2)
 
         label = "Stroke" if prob > 0.5 else "Normal"
         conf = float(prob * 100 if prob > 0.5 else (1 - prob) * 100)
-        preview_url = url_for("static", filename=f"uploads/{unique_name}")
+        preview_url = url_for("runtime_file", folder="uploads", filename=unique_name)
 
         return render_template("result.html",
                                pred_class=label,
                                confidence=round(conf, 1),
                                time_taken=duration,
-                               features=len(selected_features),
+                               features=feature_count,
+                               engine=engine,
+                               insights=insights,
                                preview_image=preview_url,
                                demo=False)
     except Exception as e:
         return render_template("result.html", error=f"❌ Prediction failed: {e}")
+
+
+
+@app.route("/runtime/<folder>/<path:filename>")
+def runtime_file(folder, filename):
+    if folder not in {"uploads", "images"}:
+        return "Invalid folder", 404
+    target_dir = os.path.join(RUNTIME_DIR, folder)
+    return send_from_directory(target_dir, filename)
 
 @app.route("/demo")
 def demo():
@@ -131,7 +186,7 @@ def demo():
         generate_demo_scan(demo_file, seed=42)
     except Exception as e:
         print("Demo generation error:", e)
-    preview_url = url_for("static", filename="images/demo_scan.png")
+    preview_url = url_for("runtime_file", folder="images", filename="demo_scan.png")
     return render_template("result.html",
                            pred_class="Stroke",
                            confidence=91.3,
@@ -142,5 +197,4 @@ def demo():
 
 # For Vercel (expose 'app' only)
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)

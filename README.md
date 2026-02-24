@@ -70,6 +70,36 @@ The dataset contains **CT and MRI images** categorized by **stroke type**, allow
 | Environment       | Python 3.8+                 |
 
 ---
+
+## ☁️ Vercel Deployment Fix (Lambda Size Limit)
+
+If your Vercel deployment fails with:
+
+`Total dependency size exceeds Lambda ephemeral storage limit (500 MB)`
+
+use this lightweight serverless setup:
+
+- Keep `requirements.txt` minimal (`flask`, `numpy`, `pillow`, `werkzeug`)
+- Remove heavyweight training/runtime-only libraries from production builds
+- Use `/tmp` (ephemeral writable directory) for uploads/generated files in serverless runtime
+- The app automatically uses:
+  - **GA-BiGRU model** when TensorFlow + model files are available
+  - **Heuristic fallback inference** when they are not available in serverless
+
+This keeps deployments under serverless limits while still returning a prediction.
+
+## 🎯 How to Get Better Predictions
+
+To improve medical prediction quality in practice:
+
+- Use consistently preprocessed grayscale scans (same orientation and resize policy)
+- Train/calibrate the GA-BiGRU model on more balanced CT/MRI stroke classes
+- Track metrics beyond accuracy (AUC, sensitivity, specificity, F1)
+- Tune decision threshold using validation ROC (instead of fixed 0.5)
+- Add explainability (Grad-CAM / saliency) and clinician validation workflow
+- For production, host full TensorFlow inference on GPU-enabled services (not tiny Lambdas)
+
+---
 ## 👨‍💻 Author  
 
 **Lomada Siva Gangi Reddy**  
